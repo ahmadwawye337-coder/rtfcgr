@@ -1,0 +1,256 @@
+package com.example.demo5;
+
+import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+public class SupermarketApp extends Application {
+
+    private Inventory inventory = new Inventory();
+    private Cart cart = new Cart();
+
+    private ObservableList<Product> observableProducts;
+    private ObservableList<CartItem> observableCart;
+    private Label lblTotal = new Label("الإجمالي الكلي: $0.00");
+
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("نظام السوبر ماركت المنظم");
+
+        observableProducts = FXCollections.observableArrayList(inventory.getProducts());
+        observableCart = FXCollections.observableArrayList(cart.getItems());
+
+        // جدول المنتجات
+        TableView<Product> tableProducts = new TableView<>();
+        tableProducts.setItems(observableProducts);
+
+        TableColumn<Product, String> colName = new TableColumn<>("اسم المنتج");
+        colName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        TableColumn<Product, Double> colPrice = new TableColumn<>("السعر ($)");
+        colPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
+        TableColumn<Product, Integer> colStock = new TableColumn<>("المخزون");
+        colStock.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        tableProducts.getColumns().addAll(colName, colPrice, colStock);
+
+        // جدول السلة
+        TableView<CartItem> tableCart = new TableView<>();
+        tableCart.setItems(observableCart);
+
+        TableColumn<CartItem, String> colCartName = new TableColumn<>("المنتج");
+        colCartName.setCellValueFactory(new PropertyValueFactory<>("productName"));
+        TableColumn<CartItem, Double> colCartPrice = new TableColumn<>("السعر");
+        colCartPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
+        TableColumn<CartItem, Integer> colCartQty = new TableColumn<>("الكمية");
+        colCartQty.setCellValueFactory(new PropertyValueFactory<>("quantity"));
+        TableColumn<CartItem, Double> colCartTotal = new TableColumn<>("المجموع");
+        colCartTotal.setCellValueFactory(new PropertyValueFactory<>("total"));
+        tableCart.getColumns().addAll(colCartName, colCartPrice, colCartQty, colCartTotal);
+
+        // عناصر التحكم
+        TextField txtQuantity = new TextField();
+        txtQuantity.setPromptText("الكمية");
+        txtQuantity.setPrefWidth(80);
+
+        Button btnAddToCart = new Button("إضافة إلى السلة 🛒");
+        Button btnCheckout = new Button("إتمام الشراء ✓");
+
+        // الأزرار والأحداث
+        btnAddToCart.setOnAction(e -> {
+            Product selectedProduct = tableProducts.getSelectionModel().getSelectedItem();
+            if (selectedProduct != null) {
+                try {
+                    int qty = Integer.parseInt(txtQuantity.getText());
+                    if (qty > 0 && qty <= selectedProduct.getStock()) {
+                        cart.addItem(selectedProduct, qty);
+                        observableCart.setAll(cart.getItems());
+                        tableProducts.refresh();
+                        updateTotalLabel();
+                        txtQuantity.clear();
+                    } else {
+                        showAlert("خطأ", "الكمية المطلوبة غير متوفرة أو غير صالحة.");
+                    }
+                } catch (NumberFormatException ex) {
+                    showAlert("خطأ", "يرجى كتابة رقم صحيح للكمية.");
+                }
+            } else {
+                showAlert("تنبيه", "الرجاء تحديد منتج من القائمة أولاً.");
+            }
+        });
+
+        btnCheckout.setOnAction(e -> {
+            if (cart.isEmpty()) {
+                showAlert("تنبيه", "السلة فارغة!");
+            } else {
+                showAlert("نجاح", "تمت عملية الشراء بنجاح!");
+                cart.clearCart();
+                observableCart.clear();
+                tableProducts.refresh();
+                updateTotalLabel();
+            }
+        });
+
+        // تنسيق الواجهة
+        VBox leftBox = new VBox(10, new Label("📦 المنتجات"), tableProducts);
+        VBox rightBox = new VBox(10, new Label("🛍️ سلة المشتريات"), tableCart);
+        HBox controlBox = new HBox(10, new Label("الكمية:"), txtQuantity, btnAddToCart, btnCheckout);
+        VBox bottomBox = new VBox(10, controlBox, lblTotal);
+
+        VBox mainLayout = new VBox(15, new HBox(15, leftBox, rightBox), bottomBox);
+        mainLayout.setPadding(new Insets(15));
+
+        Scene scene = new Scene(mainLayout, 750, 480);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    private void updateTotalLabel() {
+        lblTotal.setText(String.format("الإجمالي الكلي: $%.2f", cart.calculateTotal()));
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
+package com.example.demo5;
+
+import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+public class SupermarketApp extends Application {
+
+    private Inventory inventory = new Inventory();
+    private Cart cart = new Cart();
+
+    private ObservableList<Product> observableProducts;
+    private ObservableList<CartItem> observableCart;
+    private Label lblTotal = new Label("الإجمالي الكلي: $0.00");
+
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("نظام السوبر ماركت المنظم");
+
+        observableProducts = FXCollections.observableArrayList(inventory.getProducts());
+        observableCart = FXCollections.observableArrayList(cart.getItems());
+
+        // جدول المنتجات
+        TableView<Product> tableProducts = new TableView<>();
+        tableProducts.setItems(observableProducts);
+
+        TableColumn<Product, String> colName = new TableColumn<>("اسم المنتج");
+        colName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        TableColumn<Product, Double> colPrice = new TableColumn<>("السعر ($)");
+        colPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
+        TableColumn<Product, Integer> colStock = new TableColumn<>("المخزون");
+        colStock.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        tableProducts.getColumns().addAll(colName, colPrice, colStock);
+
+        // جدول السلة
+        TableView<CartItem> tableCart = new TableView<>();
+        tableCart.setItems(observableCart);
+
+        TableColumn<CartItem, String> colCartName = new TableColumn<>("المنتج");
+        colCartName.setCellValueFactory(new PropertyValueFactory<>("productName"));
+        TableColumn<CartItem, Double> colCartPrice = new TableColumn<>("السعر");
+        colCartPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
+        TableColumn<CartItem, Integer> colCartQty = new TableColumn<>("الكمية");
+        colCartQty.setCellValueFactory(new PropertyValueFactory<>("quantity"));
+        TableColumn<CartItem, Double> colCartTotal = new TableColumn<>("المجموع");
+        colCartTotal.setCellValueFactory(new PropertyValueFactory<>("total"));
+        tableCart.getColumns().addAll(colCartName, colCartPrice, colCartQty, colCartTotal);
+
+        // عناصر التحكم
+        TextField txtQuantity = new TextField();
+        txtQuantity.setPromptText("الكمية");
+        txtQuantity.setPrefWidth(80);
+
+        Button btnAddToCart = new Button("إضافة إلى السلة 🛒");
+        Button btnCheckout = new Button("إتمام الشراء ✓");
+
+        // الأزرار والأحداث
+        btnAddToCart.setOnAction(e -> {
+            Product selectedProduct = tableProducts.getSelectionModel().getSelectedItem();
+            if (selectedProduct != null) {
+                try {
+                    int qty = Integer.parseInt(txtQuantity.getText());
+                    if (qty > 0 && qty <= selectedProduct.getStock()) {
+                        cart.addItem(selectedProduct, qty);
+                        observableCart.setAll(cart.getItems());
+                        tableProducts.refresh();
+                        updateTotalLabel();
+                        txtQuantity.clear();
+                    } else {
+                        showAlert("خطأ", "الكمية المطلوبة غير متوفرة أو غير صالحة.");
+                    }
+                } catch (NumberFormatException ex) {
+                    showAlert("خطأ", "يرجى كتابة رقم صحيح للكمية.");
+                }
+            } else {
+                showAlert("تنبيه", "الرجاء تحديد منتج من القائمة أولاً.");
+            }
+        });
+
+        btnCheckout.setOnAction(e -> {
+            if (cart.isEmpty()) {
+                showAlert("تنبيه", "السلة فارغة!");
+            } else {
+                showAlert("نجاح", "تمت عملية الشراء بنجاح!");
+                cart.clearCart();
+                observableCart.clear();
+                tableProducts.refresh();
+                updateTotalLabel();
+            }
+        });
+
+        // تنسيق الواجهة
+        VBox leftBox = new VBox(10, new Label("📦 المنتجات"), tableProducts);
+        VBox rightBox = new VBox(10, new Label("🛍️ سلة المشتريات"), tableCart);
+        HBox controlBox = new HBox(10, new Label("الكمية:"), txtQuantity, btnAddToCart, btnCheckout);
+        VBox bottomBox = new VBox(10, controlBox, lblTotal);
+
+        VBox mainLayout = new VBox(15, new HBox(15, leftBox, rightBox), bottomBox);
+        mainLayout.setPadding(new Insets(15));
+
+        Scene scene = new Scene(mainLayout, 750, 480);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    private void updateTotalLabel() {
+        lblTotal.setText(String.format("الإجمالي الكلي: $%.2f", cart.calculateTotal()));
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
